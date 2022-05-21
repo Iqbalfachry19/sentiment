@@ -5,6 +5,7 @@ import logo from './images/Moralis.png';
 import Coin from './components/Coin';
 import { abouts } from './about';
 import { useMoralisWeb3Api, useMoralis } from 'react-moralis';
+import { useCallback } from 'react';
 
 const App = () => {
   const [btc, setBtc] = useState(80);
@@ -16,17 +17,20 @@ const App = () => {
   const [visible, setVisible] = useState(false);
   const [modalToken, setModalToken] = useState();
 
-  async function getRatio(tick, setPerc) {
-    const Votes = Moralis.Object.extend('Votes');
-    const query = new Moralis.Query(Votes);
-    query.equalTo('ticker', tick);
-    query.descending('createdAt');
-    const results = await query.first();
-    let up = Number(results.attributes.up);
-    let down = Number(results.attributes.down);
-    let ratio = Math.round((up / (up + down)) * 100);
-    setPerc(ratio);
-  }
+  const getRatio = useCallback(
+    async (tick, setPerc) => {
+      const Votes = Moralis.Object.extend('Votes');
+      const query = new Moralis.Query(Votes);
+      query.equalTo('ticker', tick);
+      query.descending('createdAt');
+      const results = await query.first();
+      let up = Number(results.attributes.up);
+      let down = Number(results.attributes.down);
+      let ratio = Math.round((up / (up + down)) * 100);
+      setPerc(ratio);
+    },
+    [Moralis.Object, Moralis.Query],
+  );
 
   useEffect(() => {
     if (isInitialized) {
@@ -50,7 +54,7 @@ const App = () => {
 
       createLiveQuery();
     }
-  }, [isInitialized]);
+  }, [Moralis.Query, getRatio, isInitialized]);
 
   useEffect(() => {
     async function fetchTokenPrice() {
@@ -65,7 +69,7 @@ const App = () => {
     if (modalToken) {
       fetchTokenPrice();
     }
-  }, [modalToken]);
+  }, [Web3Api.token, modalToken]);
 
   return (
     <>
